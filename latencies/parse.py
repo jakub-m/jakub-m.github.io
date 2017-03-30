@@ -53,6 +53,6 @@ def format_dots(n):
 def main():
     for s in sorted(iter_stats(), key=lambda d: d['magnitude']):
         ref = '\t[{}]'.format(s['reference']) if s['reference'] else ''
-        print '{dots: <20}\t{latency:<10}\t{name:<30}{ref}'.format(dots=format_dots(s['magnitude']), ref=ref, **s)
+        print '{dots: <20} | {latency:>10} | {name:<30} | {ref}'.format(dots=format_dots(s['magnitude']), ref=ref, **s)
 
 main()
