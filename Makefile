@@ -1,9 +1,12 @@
 files=$(shell find jekyll/ -type f)
 publish: $(files)
 	jekyll build
-	mv _site ..
+	rm -frv ../_site
+	mv -fv _site ..
 	git checkout master
-	mv ../_site/* .
+	rm -rf about/ assets/ jekyll/ stuff/
+	mv -fv ../_site/* .
+	rmdir -v ../_site
 	git add . 
 	git commit -m "Publish $$(date)"
 
