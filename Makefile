@@ -1,6 +1,14 @@
 files=$(shell find jekyll/ -type f)
-publish: $(files)
+
+build: $(files)
 	jekyll build
+watch:
+	jekyll build --watch
+serve: build
+	open http://localhost:8000
+	(cd _site; python3 -m http.server)
+
+publish: build
 	rm -frv ../_site
 	mv -fv _site ..
 	git checkout master
@@ -11,8 +19,6 @@ publish: $(files)
 	git commit -m "Publish $$(date)"
 
 
-local: $(files)
-	jekyll build --source jekyll --destination .
 
 
 
