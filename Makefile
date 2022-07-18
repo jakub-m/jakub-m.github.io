@@ -13,10 +13,11 @@ publish: build
 	mv -fv _site ..
 	git checkout master
 	rm -rf about/ assets/ jekyll/ stuff/
-	mv -fv ../_site/* .
-	rmdir -v ../_site
+	#mv -fv ../_site/* .
+	rsync -avzt ../_site/ . 
+	rm -fvr ../_site
 	git add . 
-	git commit -m "Publish $$(date)"
+	#git commit -m "Publish $$(date)"
 
 
 
