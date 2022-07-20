@@ -3,9 +3,9 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
-<title>User settings, Lamport clocks, lightweight formal methods | Jakub Mikians blog</title>
+<title>User settings, Lamport clocks and lightweight formal methods | Jakub Mikians blog</title>
 <meta name="generator" content="Jekyll v4.2.2" />
-<meta property="og:title" content="User settings, Lamport clocks, lightweight formal methods" />
+<meta property="og:title" content="User settings, Lamport clocks and lightweight formal methods" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="Synchronizing settings between browsers and a backend seems a simple task. It turns out that it can teach us some lessons on distributes systems and formal modeling. After you read this post, you will learn, I hope, how we used Lamport Clocks to synchronize user settings between browsers and backend service. You will also learn how we used Lightweight Formal Methods to find bugs in our implementation of the synchronization protocol." />
 <meta property="og:description" content="Synchronizing settings between browsers and a backend seems a simple task. It turns out that it can teach us some lessons on distributes systems and formal modeling. After you read this post, you will learn, I hope, how we used Lamport Clocks to synchronize user settings between browsers and backend service. You will also learn how we used Lightweight Formal Methods to find bugs in our implementation of the synchronization protocol." />
@@ -15,9 +15,9 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2022-07-17T23:46:39+02:00" />
 <meta name="twitter:card" content="summary" />
-<meta property="twitter:title" content="User settings, Lamport clocks, lightweight formal methods" />
+<meta property="twitter:title" content="User settings, Lamport clocks and lightweight formal methods" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2022-07-17T23:46:39+02:00","datePublished":"2022-07-17T23:46:39+02:00","description":"Synchronizing settings between browsers and a backend seems a simple task. It turns out that it can teach us some lessons on distributes systems and formal modeling. After you read this post, you will learn, I hope, how we used Lamport Clocks to synchronize user settings between browsers and backend service. You will also learn how we used Lightweight Formal Methods to find bugs in our implementation of the synchronization protocol.","headline":"User settings, Lamport clocks, lightweight formal methods","mainEntityOfPage":{"@type":"WebPage","@id":"https://jakub-m.github.io/2022/07/17/laport-clocks-formal.html"},"url":"https://jakub-m.github.io/2022/07/17/laport-clocks-formal.html"}</script>
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2022-07-17T23:46:39+02:00","datePublished":"2022-07-17T23:46:39+02:00","description":"Synchronizing settings between browsers and a backend seems a simple task. It turns out that it can teach us some lessons on distributes systems and formal modeling. After you read this post, you will learn, I hope, how we used Lamport Clocks to synchronize user settings between browsers and backend service. You will also learn how we used Lightweight Formal Methods to find bugs in our implementation of the synchronization protocol.","headline":"User settings, Lamport clocks and lightweight formal methods","mainEntityOfPage":{"@type":"WebPage","@id":"https://jakub-m.github.io/2022/07/17/laport-clocks-formal.html"},"url":"https://jakub-m.github.io/2022/07/17/laport-clocks-formal.html"}</script>
 <!-- End Jekyll SEO tag -->
 <link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="https://jakub-m.github.io/feed.xml" title="Jakub Mikians blog" /></head>
 <body><header class="site-header" role="banner">
@@ -40,7 +40,7 @@
         <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
 
   <header class="post-header">
-    <h1 class="post-title p-name" itemprop="name headline">User settings, Lamport clocks, lightweight formal methods</h1>
+    <h1 class="post-title p-name" itemprop="name headline">User settings, Lamport clocks and lightweight formal methods</h1>
     <p class="post-meta">
       <time class="dt-published" datetime="2022-07-17T23:46:39+02:00" itemprop="datePublished">Jul 17, 2022
       </time></p>
@@ -202,6 +202,8 @@ the backend would silently increment its clock and return it to the browser:</p>
 <p>Handling even a simple distributed state is not trivial if one wants to do it correctly. Fortunately, algorithms and rich
 research exist. Lightweight formal testing is a very <em>practical</em> framework for testing such algorithms in the
 application context.</p>
+
+<p>(<a href="https://news.ycombinator.com/item?id=32171619">on HN</a>)</p>
 
 
   </div><a class="u-url" href="/2022/07/17/laport-clocks-formal.html" hidden></a>
