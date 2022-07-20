@@ -13,7 +13,6 @@ publish: build
 	mv -fv _site ..
 	git checkout master
 	rm -rf about/ assets/ jekyll/ stuff/
-	#mv -fv ../_site/* .
 	rsync -avzt ../_site/ . 
 	rm -fvr ../_site
 	git add . 
