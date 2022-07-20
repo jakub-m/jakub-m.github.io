@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "User settings, Lamport clocks, lightweight formal methods"
+title:  "User settings, Lamport clocks and lightweight formal methods"
 date:   2022-07-17 21:46:39 -0000
 
 ---
@@ -144,6 +144,8 @@ Handling even a simple distributed state is not trivial if one wants to do it co
 research exist. Lightweight formal testing is a very _practical_ framework for testing such algorithms in the
 application context.
 
+([on HN][ref_hn])
+
 [ref_acars]:https://en.wikipedia.org/wiki/ACARS
 [ref_amadeus]:https://phys.org/news/2012-07-wreaks-internet-havoc.html
 [ref_asi]:https://www.airspace-intelligence.com/company
@@ -152,3 +154,4 @@ application context.
 [ref_sokocheff]:https://sookocheff.com/post/time/lamport-clock/
 [ref_tlaplus]:https://en.wikipedia.org/wiki/TLA%2B
 [ref_wiki]:https://en.wikipedia.org/wiki/Lamport_timestamp
+[ref_hn]:https://news.ycombinator.com/item?id=32171619
