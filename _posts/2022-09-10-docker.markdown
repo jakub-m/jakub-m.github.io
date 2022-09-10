@@ -280,3 +280,4 @@ Docker itself is not magic, the mechanisms of the kernel are the magic, and you 
 [ref_20_unshare]:https://github.com/jakub-m/no-docker/blob/main/20-unshare.sh
 [ref_40_overlayfs]:https://github.com/jakub-m/no-docker/blob/main/40-overlayfs.sh
 
+([on HN](https://news.ycombinator.com/item?id=32794900))
