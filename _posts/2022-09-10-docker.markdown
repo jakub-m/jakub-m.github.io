@@ -105,7 +105,7 @@ sudo unshare --mount-proc \
     bin/sh
 ```
 
-Have a look around. You will see that the root directory of the forked process is restricted ("jailed") to the directory we specified when forking the shell. Now run the `tool` and see how the same process looks from the "inside" and "outside" of the forked shell. First copy the tool to XXX, then run the tool from the forked shell:
+Have a look around. You will see that the root directory of the forked process is restricted ("jailed") to the directory we specified when forking the shell. Now run the `tool` and see how the same process looks from the "inside" and "outside" of the forked shell. First copy the tool to `image-busybox-layer/`, then run the tool from the forked shell:
 
 ```
 # Run from the forked shell.  It does nothing but sleep.
