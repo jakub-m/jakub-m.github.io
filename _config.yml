@@ -21,7 +21,7 @@
 title: Jakub Mikians blog
 #email: your-email@example.com
 description: >- # this means to ignore newlines until "baseurl:"
-  An exercise in writing. All the opinions are mine, unless you share them.
+  An exercise in writing. All the opinions are mine, unless you share them. (test jekyll, works)
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://jakub-m.github.io" # the base hostname & protocol for your site, e.g. http://example.com
 domain: jakub-m.github.io
