@@ -110,6 +110,8 @@ Biography pattern is an easy-to-implement and powerful tool that can help you wi
 also learned that raster operations might be faster when done in the application instead of PostGIS, but that is a topic
 for a different post.
 
+([on HN](https://news.ycombinator.com/item?id=33428244))
+
 ---
 
 Thanks [Lukasz Kukielka](https://www.linkedin.com/in/lukasz-kukielka/) and [Lukasz
