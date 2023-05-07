@@ -4,9 +4,9 @@ title: "Lessons learned from using PostGIS to deliver raster maps"
 date: 2023-05-07 00:00:00 -0000
 ---
 
-[PostGIS](<[https://en.wikipedia.org/wiki/PostGIS](https://en.wikipedia.org/wiki/PostGIS)>) is an extension to Postgres to manage geospatial data. PostGIS supports rasters data (images) and vector data (lines, polygons), operations on rasters and vectors, geospatial indexes, different projections, and more.
+[PostGIS](https://en.wikipedia.org/wiki/PostGIS) is an extension to Postgres to manage geospatial data. PostGIS supports rasters data (images) and vector data (lines, polygons), operations on rasters and vectors, geospatial indexes, different projections, and more.
 
-We used PostGIS at [Airspace Intelligence](<[https://www.airspace-intelligence.com/](https://www.airspace-intelligence.com/)>) as a base for a service that would serve generic airspace-related information, both in vector format (e.g. closed airspace) and raster format (e.g. weather maps).
+We used PostGIS at [Airspace Intelligence](https://www.airspace-intelligence.com/) as a base for a service that would serve generic airspace-related information, both in vector format (e.g. closed airspace) and raster format (e.g. weather maps).
 
 It turned out a non-trivial task to build such a generic and performant service. Here I want to share some lessons that we learned along.
 
@@ -16,21 +16,21 @@ The title of this blog post says “raster maps” and the rest of the post circ
 
 # GDAL, out-db, and Google Cloud SQL compatibility
 
-PostGIS uses [GDAL](<[https://gdal.org/](https://gdal.org/)>) (Geospatial Data Abstraction Library), which is a battle-proven library and a set of great tools to transform data between different projections and formats, perform operations on geographical rasters, and more.
+PostGIS uses [GDAL](https://gdal.org/) (Geospatial Data Abstraction Library), which is a battle-proven library and a set of great tools to transform data between different projections and formats, perform operations on geographical rasters, and more.
 
 **PostGIS with raster drivers is an extremely versatile and flexible tool for prototyping.** You can very easily load the datasets to the database, intersect coordinates, and output the datasets to different formats with a bunch of SQL lines.
 
 GDAL, and therefore PostGIS, offers “**out-db**” drivers to store the raster images outside of the database. Out-db allows storing the heavy raster image in Google Cloud Store, AWS S3 or a local file. The database will store only a reference (a URI) to the remote asset together with other metadata (e.g. bounding box), dramatically reducing table size (instead of storing 1MB image it stores only 1KB of metadata). All the operations on rasters are transparent, GDAL will take care of fetching and processing the remote assets.
 
-While bootstrapping Google Cloud SQL and PostGIS we bitterly realized that **Google Cloud SQL does not support PostGIS Drivers** (see this [ticket](<[https://issuetracker.google.com/issues/131229722](https://issuetracker.google.com/issues/131229722)>) and the drivers [here](<[https://postgis.net/docs/postgis_enable_outdb_rasters.html](https://postgis.net/docs/postgis_enable_outdb_rasters.html)>) and [here](<[https://postgis.net/docs/postgis_gdal_enabled_drivers.html](https://postgis.net/docs/postgis_gdal_enabled_drivers.html)>)). This means that if you want to use built-in GDAL goodies for rasters and out-db in Google Cloud Platform, you need to sacrifice all the automation that Cloud SQL offers and manage your own PostGIS instance.
+While bootstrapping Google Cloud SQL and PostGIS we bitterly realized that **Google Cloud SQL does not support PostGIS Drivers** (see this [ticket](https://issuetracker.google.com/issues/131229722) and the drivers [here](https://postgis.net/docs/postgis_enable_outdb_rasters.html) and [here](https://postgis.net/docs/postgis_gdal_enabled_drivers.html)). This means that if you want to use built-in GDAL goodies for rasters and out-db in Google Cloud Platform, you need to sacrifice all the automation that Cloud SQL offers and manage your own PostGIS instance.
 
-Further, when using **out-db** we encountered a **blocking bug**. While most of the time out-db and Google Cloud Store (GCS) worked flawlessly, sometimes it just didn’t. The database querying the objects in GCS randomly failed (around 1% of the requests, IIRC). We were not able to track down the root cause and were forced to abandon out-db in favor of our own image management. We ruled out network issues and [GCS request rate limit issues](<[https://cloud.google.com/storage/docs/request-rate](https://cloud.google.com/storage/docs/request-rate)>), we were looking inside the GDAL [source code just to stop at the line saying that the file did not exist](<[https://github.com/OSGeo/gdal/blob/68c1e6d0c73f2a846850784395b9c793475d4a36/gcore/gdaldataset.cpp#L3698](https://github.com/OSGeo/gdal/blob/68c1e6d0c73f2a846850784395b9c793475d4a36/gcore/gdaldataset.cpp#L3698)>).
+Further, when using **out-db** we encountered a **blocking bug**. While most of the time out-db and Google Cloud Store (GCS) worked flawlessly, sometimes it just didn’t. The database querying the objects in GCS randomly failed (around 1% of the requests, IIRC). We were not able to track down the root cause and were forced to abandon out-db in favor of our own image management. We ruled out network issues and [GCS request rate limit issues](https://cloud.google.com/storage/docs/request-rate), we were looking inside the GDAL [source code just to stop at the line saying that the file did not exist](https://github.com/OSGeo/gdal/blob/68c1e6d0c73f2a846850784395b9c793475d4a36/gcore/gdaldataset.cpp#L3698).
 
 We worked the issue around by leaving out-db and managing the files on our own. Basically, we implemented a mechanism akin to out-db but in the application. We left exactly the same database and GCS layout, but instead of fetching the data through out-db, we fetched the data directly in the application. Handling the raster files in the application, and not in the database, enabled us to optimize further by caching the frequently accessed data in Redis, and also caching the whole queries.
 
 Worth noting that while we abandoned the original integration of GDAL and GCS, we still preserved the original format of all the data in the database. This was useful because we still could use raster2pgsql and all the PostGIS queries to prototype and troubleshoot.
 
-Another lesson learned was that **GDAL toolchain and raster2pgsql tool in particular are great.** You can easily load the rasters to the database using a variety of input formats and apply predefined transformations `gdal_warp` and `gdal_translate` or you can apply arbitrary custom transformations defined with Python using `gdal_calc`. Those tools are particularly handy when working with [GRIB2](<[https://en.wikipedia.org/wiki/GRIB](https://en.wikipedia.org/wiki/GRIB)>) or [NetCDF](<[https://en.wikipedia.org/wiki/NetCDF](https://en.wikipedia.org/wiki/NetCDF)>) input formats.
+Another lesson learned was that **GDAL toolchain and raster2pgsql tool in particular are great.** You can easily load the rasters to the database using a variety of input formats and apply predefined transformations `gdal_warp` and `gdal_translate` or you can apply arbitrary custom transformations defined with Python using `gdal_calc`. Those tools are particularly handy when working with [GRIB2](https://en.wikipedia.org/wiki/GRIB) or [NetCDF](https://en.wikipedia.org/wiki/NetCDF) input formats.
 
 # Raster processing
 
@@ -66,7 +66,7 @@ Also worth noting, the Postgres query planner does not optimize **custom functio
 
 # Python interoperability
 
-When we were experimenting with doing the raster processing entirely in the database, we had to expose the rasters from PostGIS to Python. One could expose the queried values with **ST_DumpValues**, but it turned out to be prohibitively slow. Using the raw **WKB** format (”Well Known Binary”, what a great acronym) is far faster but requires parsing WKB in Python. Fortunately the [format is easy to parse](<[https://trac.osgeo.org/postgis/browser/trunk/raster/doc/RFC2-WellKnownBinaryFormat](https://trac.osgeo.org/postgis/browser/trunk/raster/doc/RFC2-WellKnownBinaryFormat)>). If you try to parse WKB yourself, you will probably stumble upon [this example](<[https://geoalchemy-2.readthedocs.io/en/latest/gallery/test_decipher_raster.html](https://geoalchemy-2.readthedocs.io/en/latest/gallery/test_decipher_raster.html)>). Beware, it’s buggy, it does not recognize the “nodata” value, therefore, all the values are shifted by one pixel.
+When we were experimenting with doing the raster processing entirely in the database, we had to expose the rasters from PostGIS to Python. One could expose the queried values with **ST_DumpValues**, but it turned out to be prohibitively slow. Using the raw **WKB** format (”Well Known Binary”, what a great acronym) is far faster but requires parsing WKB in Python. Fortunately the [format is easy to parse](https://trac.osgeo.org/postgis/browser/trunk/raster/doc/RFC2-WellKnownBinaryFormat). If you try to parse WKB yourself, you will probably stumble upon [this example](https://geoalchemy-2.readthedocs.io/en/latest/gallery/test_decipher_raster.html). Beware, it’s buggy, it does not recognize the “nodata” value, therefore, all the values are shifted by one pixel.
 
 # Conclusions
 
@@ -74,4 +74,4 @@ PostGIS is a great tool, although it can be slow when you want to have any non-t
 
 # Acknowledgments
 
-Thanks [Lucas Kukielk](<[https://www.linkedin.com/in/lukasz-kukielka/](https://www.linkedin.com/in/lukasz-kukielka/)>) for proofreading and comments!
+Thanks [Lucas Kukielka](https://www.linkedin.com/in/lukasz-kukielka/) for proofreading and comments!
