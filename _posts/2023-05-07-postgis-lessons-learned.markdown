@@ -75,3 +75,5 @@ PostGIS is a great tool, although it can be slow when you want to have any non-t
 # Acknowledgments
 
 Thanks [Lucas Kukielka](https://www.linkedin.com/in/lukasz-kukielka/) for proofreading and comments!
+
+([HN](https://news.ycombinator.com/item?id=35851557))
