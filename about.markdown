@@ -16,3 +16,6 @@ permalink: /about/
 [ref_mastodon]:https://mastodon.social/@jakubm
 
 
+<div style="display:none">
+    <a rel="me" href="https://mastodon.social/@jakubm">Mastodon</a>
+</div>
