@@ -28,6 +28,10 @@ domain: jakub-m.github.io
 twitter_username: JakubMikians
 github_username:  jakub-m
 
+mastodon:
+ - username: jakubm
+   instance: mastodon.social
+
 # Build settings
 theme: minima
 plugins:
