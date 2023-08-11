@@ -7,7 +7,7 @@ date: 2023-08-11 00:00:00 -0000
 You are an Engineer and you talk with your Product Manager and the Business
 People. You explain to them how important it is to migrate the database to the
 new schema, but they just don’t get it. Not only they don’t get it, but they
-say that it’s more important to at this new button in the UI to sort the users
+say that it’s more important to add this new button in the UI to sort the users
 by the last activity time. They say it’s a “tremendous added value” and “a game
 changer”, and you know it’s just a one-afternoon fix in React. They don’t seem
 to get, that the database problem is clearly more important and definitely
