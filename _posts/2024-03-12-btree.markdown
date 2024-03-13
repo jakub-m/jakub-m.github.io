@@ -90,10 +90,10 @@ ticks.
 
 I wanted to confirm how the cache is affected using [Instruments][ref_instruments] tool, which can track various CPU
 counters for L1 and L2 cache. I run the benchmarks... and the counters didn't behave as I expected. I don't yet know if
-I misinterpret the CPU counters, or my intuition about the cache is totally wrong. This deserves a separte post.
+I misinterpret the CPU counters, or my intuition about the cache is totally wrong. This deserves a separate post.
 
 [ref_instruments]:https://en.wikipedia.org/wiki/Instruments_(software)
 
 # Takeaways
 
-Using a primary key that results in random accesses to B-tree degradest performance, comparing to serial primary key.
+Using a primary key that results in random accesses to B-tree degrades performance, comparing to serial primary key.
