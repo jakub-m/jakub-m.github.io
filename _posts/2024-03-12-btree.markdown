@@ -4,6 +4,8 @@ title: "Comparing performance of sequential and random insertions to a B-tree"
 date: 2024-03-12 00:00:00 -0000
 ---
 
+(Last updated at Mar 23 2024)
+
 # Comparing performance of sequential and random insertions to a B-tree
 
 I read [this interesting article][ref_art] about choosing primary keys (PK) in Postgres. The article mentions that using
@@ -86,6 +88,31 @@ For the straight sequence, 96% of the accesses happen within 100 ticks, and 99.9
 the other hand, for the shuffled sequence, 47% accesses happen within 100 ticks, 63% within 2,000 and 83% within 100,000
 ticks.
 
+# Number of rebalances
+
+[This article][ref_mysql_uuid] mentions that inserts of UUIDs to MySQL impacts performance because of rebalancing:
+
+> With sequential values, this process is relatively straightforward; however, when randomness is introduced into the
+> algorithm, it can take significantly longer for MySQL to rebalance the tree. On a high-volume database, this can hurt
+> user experience as MySQL tries to keep the tree in balance.
+
+I checked that [with my simple model][ref_go_rebalance]. It turns out (at least for the model, I don't know about
+		MySQL), that for the shuffled sequence, there are less rebalances than for the straight sequence, so keeping the
+tree in balance does not seem to be an issue. Intuitively, more rebalances for a straight sequence happen because a
+straight sequence tries to always add a node to the very-right leaf the tree, so the tree is more unbalanced with each
+insert. In fact, it seems that the straight sequence is the worst case sequence in terms of rebalancing. On the other
+hand, with the shuffled sequence, the incoming values are "spread" through the leaf nodes, and have a higher chance to
+land on a node that does not need rebalancing.
+
+![img](/assets/btree/rebalance_count.png)
+
+(For a B-tree of order 2 the above does not hold, but I didn't explore why exactly. I doubt that MySQL used such a low
+ order B-tree though.)
+
+[ref_mysql_uuid]:https://planetscale.com/blog/the-problem-with-using-a-uuid-primary-key-in-mysql
+[ref_go_rebalance]:https://github.com/jakub-m/btree-cache-benchmark/blob/main/cli/count_rebalance/main.go
+
+
 # Twist
 
 I wanted to confirm how the cache is affected using [Instruments][ref_instruments] tool, which can track various CPU
@@ -97,3 +124,4 @@ I misinterpret the CPU counters, or my intuition about the cache is totally wron
 # Takeaways
 
 Using a primary key that results in random accesses to B-tree degrades performance, comparing to serial primary key.
+
