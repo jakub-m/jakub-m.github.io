@@ -16,7 +16,7 @@ path_main_css=$(find $target_dir -name 'main.*.css')
 
 >"_layouts/${app_name}.html" cat<<EOF
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl-PL">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta charset="utf-8">
@@ -25,7 +25,6 @@ path_main_css=$(find $target_dir -name 'main.*.css')
 <meta name="description" content="">
 <link rel="apple-touch-icon" href="/logo192.png">
 <link rel="manifest" href="/${path_manifest_json}">
-<title>React App</title>
 <script defer src="/${path_main_js}"></script><link href="/${path_main_css}" rel="stylesheet">
 </head>
 <body>
