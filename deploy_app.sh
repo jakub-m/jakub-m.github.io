@@ -52,3 +52,5 @@ permalink: ${app_name_hyp}
 
 ---
 EOF
+
+echo "Ensure path_main_js=${path_main_js} points to correct js and path_main_css=${path_main_css} points to CSS file".
