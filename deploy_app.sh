@@ -11,7 +11,8 @@ app_name_und=$(echo "${app_name}" | tr - _)
 
 target_dir="assets/$app_name_und"
 rm -rvf "$target_dir"
-cp -rv "$source_dir/build" "$target_dir"
+#cp -rv "$source_dir/build" "$target_dir"
+cp -rv "$source_dir/dist" "$target_dir"
 
 path_manifest_json=$(find $target_dir -name "manifest.json")
 path_main_js=$(find $target_dir -name 'main.*.js')
