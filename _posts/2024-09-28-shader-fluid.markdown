@@ -1,8 +1,8 @@
 ---
 layout: post
 title:  "Shader fluid" - Navier-Stokes in WebGL
-date:   2024-09-28 00:00:00 -0000
-permalink: shader-fluid
+date:   2024-09-28 01:00:00 -0000
+permalink: shader-fluid-post
 
 ---
 
