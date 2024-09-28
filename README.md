@@ -1,3 +1,6 @@
+# jakub-m personal website
+
+
 To deploy a React app from other directory do:
 
 1. Choose base path like `/the-foo-app`

@@ -6,7 +6,10 @@ set -o pipefail
 
 source_dir="$1"
 app_name="$2"
-target_dir="assets/$app_name"
+app_name_hyp=$(echo "${app_name}" | tr _ -)
+app_name_und=$(echo "${app_name}" | tr - _)
+
+target_dir="assets/$app_name_und"
 rm -rvf "$target_dir"
 cp -rv "$source_dir/build" "$target_dir"
 
@@ -14,7 +17,7 @@ path_manifest_json=$(find $target_dir -name "manifest.json")
 path_main_js=$(find $target_dir -name 'main.*.js')
 path_main_css=$(find $target_dir -name 'main.*.css')
 
->"_layouts/${app_name}.html" cat<<EOF
+>"_layouts/${app_name_und}.html" cat<<EOF
 <!DOCTYPE html>
 <html lang="pl-PL">
 <head>
@@ -32,4 +35,19 @@ path_main_css=$(find $target_dir -name 'main.*.css')
 <div id="root"></div>
 </body>
 </html>
+EOF
+
+
+
+_date=$(tscalc -f %Y-%m-%d)
+post_path="_posts/${_date}-${app_name_hyp}.markdown"
+
+>"${post_path}" cat<<EOF
+---
+layout: ${app_name_und}
+title:  The Foo app
+date:   ${_date} 00:00:00 -0000
+permalink: ${app_name_hyp}
+
+---
 EOF
