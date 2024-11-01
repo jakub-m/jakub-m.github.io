@@ -1,0 +1,38 @@
+---
+
+layout: post
+title:  Disassembling ASG replica Specna M4
+date:   2024-11-01 00:00:00 -0000
+
+---
+
+Visual notes, in case I do it again.
+
+[![img](/assets/2024-11-01-specna/specna-100.jpeg){: width="256"}](/assets/2024-11-01-specna/specna-100.jpeg)
+[![img](/assets/2024-11-01-specna/specna-130.jpeg){: width="256"}](/assets/2024-11-01-specna/specna-130.jpeg)
+
+[![img](/assets/2024-11-01-specna/specna-150.jpeg){: width="256"}](/assets/2024-11-01-specna/specna-150.jpeg)
+[![img](/assets/2024-11-01-specna/specna-170.jpeg){: width="256"}](/assets/2024-11-01-specna/specna-170.jpeg)
+
+[![img](/assets/2024-11-01-specna/specna-200.jpeg){: width="256"}](/assets/2024-11-01-specna/specna-200.jpeg)
+[![img](/assets/2024-11-01-specna/specna-250.jpeg){: width="256"}](/assets/2024-11-01-specna/specna-250.jpeg)
+
+[![img](/assets/2024-11-01-specna/specna-270.jpeg){: width="256"}](/assets/2024-11-01-specna/specna-270.jpeg)
+[![img](/assets/2024-11-01-specna/specna-300.jpeg){: width="256"}](/assets/2024-11-01-specna/specna-300.jpeg)
+
+[![img](/assets/2024-11-01-specna/specna-400.jpeg){: width="256"}](/assets/2024-11-01-specna/specna-400.jpeg)
+[![img](/assets/2024-11-01-specna/specna-450.jpeg){: width="256"}](/assets/2024-11-01-specna/specna-450.jpeg)
+
+[![img](/assets/2024-11-01-specna/specna-500.jpeg){: width="256"}](/assets/2024-11-01-specna/specna-500.jpeg)
+[![img](/assets/2024-11-01-specna/specna-550.jpeg){: width="256"}](/assets/2024-11-01-specna/specna-550.jpeg)
+
+[![img](/assets/2024-11-01-specna/specna-600.jpeg){: width="256"}](/assets/2024-11-01-specna/specna-600.jpeg)
+[![img](/assets/2024-11-01-specna/specna-650.jpeg){: width="256"}](/assets/2024-11-01-specna/specna-650.jpeg)
+
+[![img](/assets/2024-11-01-specna/specna-700.jpeg){: width="256"}](/assets/2024-11-01-specna/specna-700.jpeg)
+[![img](/assets/2024-11-01-specna/specna-750.jpeg){: width="256"}](/assets/2024-11-01-specna/specna-750.jpeg)
+
+[![img](/assets/2024-11-01-specna/specna-800.jpeg){: width="256"}](/assets/2024-11-01-specna/specna-800.jpeg)
+[![img](/assets/2024-11-01-specna/specna-850.jpeg){: width="256"}](/assets/2024-11-01-specna/specna-850.jpeg)
+
+[![img](/assets/2024-11-01-specna/specna-900.jpeg){: width="256"}](/assets/2024-11-01-specna/specna-900.jpeg)
