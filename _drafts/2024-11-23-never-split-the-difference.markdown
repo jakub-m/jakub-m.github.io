@@ -112,3 +112,39 @@ conversation.
    questions: "how do we know we are off track?". Pay attention to **inconsistencies**, like body language.
 1. The more "me" and "I", the less important the person is in the team.
 1. **Humanize** yourself: "I am Joe, what's Joe discount"
+
+# Chapter 9: Bargaining
+
+1. Three types:
+    1. Analyst - methodological, diligent, not in rush. Avert to mistakes.
+    1. Accommodator - builds relations, keeps talking. Sociable.
+    1. Assertive - time is money. Wants to be heard.
+1. Never be needy for the deal, ready-to-walk away mindset.
+1. Prepare
+1. Be ready to take the punch, like an extreme anchor. E.g. "let's leave the numbers aside, tell me how can we know we
+   are doing both a good deal".
+1. Ackerman bargaining
+    1. Set target price (goal)
+    1. First offer 65%
+    1. Calculate three raises: 85% (+20%), 95% (+10%), 100% (+5%)
+    1. Use calibrated questions to make other side counter before your raise
+    1. Use odd numbers as final number
+    1. On final number, throw non-monetary item to show you are at your limit
+
+# Chapter 10: Black swans
+
+1. Uncover black swans, bits of crucial information that can change the deal.
+1. Three types of leverage:
+    1. Positive - you have something the other side wants,
+    1. Negative - you can inflict loss,
+    1. Normative - address the counterpart rules or moral framework.
+1. Understand the other side "religion", world view.
+1. Mistakes why others appear **crazy**:
+    1. They are **ill-informed**
+    1. They are **constrained**
+    1. They have **other interests**
+1. Get face time.
+1. Similarity principle. Find common ground, build empathy.
+1. Use labeling or **mislabeling**: "Seems like the seller does not believe in prospects of this property.
+1. Review notes, confront what your heard.
+
