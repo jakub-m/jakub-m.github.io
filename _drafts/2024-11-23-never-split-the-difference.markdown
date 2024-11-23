@@ -11,16 +11,14 @@ Notes from reading [Never Split The Difference][book]. Amazing book, highly reco
 
 # Chapter 2: Mirroring
 
-1. **Discover information**. Do not hold to assumptions, use mirroring to discover new information. Focus on the other person, active
-listening. No battle of arguments. Extract more information by comparing notes, re-listening, sharing what you heard,
-having people that only listen and take notes, having extra ears.
-
+1. **Discover information**. Do not hold to assumptions, use mirroring to discover new information. Focus on the other
+   person, active listening. No battle of arguments. Extract more information by comparing notes, re-listening, sharing
+   what you heard, having people that only listen and take notes, having extra ears.
 1. **Slow down.** Three Voices: 
     1. "Late-Night, FM DJ Voice" - deep, soft, slow, reassuring, in control. Down-inflecting.
-    1. Positive and playful - use most of the time, easy going, good-natured feeling. Smile when talking. Upward-inflection
-      encourages engagement.
+    1. Positive and playful - use most of the time, easy going, good-natured feeling. Smile when talking.
+       Upward-inflection encourages engagement.
     1. Direct and assertive - use sparingly, almost never.
-
 1. **Mirroring** - [isopraxism][mirror]. Repeat last threw words of the sentence. Non-confronting mirroring:
     1. Use late-night FM DJ voice
     1. Start with "I'm sorry..."
@@ -51,30 +49,30 @@ having people that only listen and take notes, having extra ears.
 
 # Chapter 4: No
 
-1. "No" gives security, control, protection, autonomy. "No" slow things down. "No" is easier to say, and opens
-conversation. 
-1. Email magic, provoke "No", force conversation. "Have you given up on this project"?
-1. Force conversation by intentionally mislabeling emotions, like "It seems like you want this project to fail".
+1. **"No"** gives security, control, protection, autonomy. "No" slow things down. "No" is easier to say, and opens
+   conversation. 
+1. Email magic, **provoke "No"**, force conversation. "Have you given up on this project"?
+1. Force conversation by intentionally **mislabeling emotions**, like "It seems like you want this project to fail".
 1. Pushing to "Yes" makes people defensive. 
 
 # Chapter 5: That's right
 
-1. Script to get to "that's right": (i) pauses, silence, minimal encouragers ("yes", "OK", "I see"), (ii) mirroring,
+1. Script to get to "**that's right**": (i) pauses, silence, minimal encouragers ("yes", "OK", "I see"), (ii) mirroring,
    (iii) labeling, (iv) paraphrase, (v) summary = paraphrasing + labeling.
 1. Not "you're right".
 
 # Chapter 6: Bend reality
 
-1. Never split the difference. Don't compromise in the middle.
-1. Use deadlines. Know your counterpart deadline. Deadline cuts both ways (deal is over for both sides).
-1. Leverage loss aversion. Make the counterpart see that the deal can be lost.
+1. Never split the difference. **Don't compromise** in the middle.
+1. Use **deadlines**. Know your counterpart deadline. Deadline cuts both ways (deal is over for both sides).
+1. Leverage **loss aversion**. Make the counterpart see that the deal can be lost.
 1. No deal is better than bad deal.
-1. "Fair", how (not) to use
+1. **"Fair"**, how (not) to use
     1. No: "I just want this to be fair" - "Let's go back and see when I tread you unfair and I will try to fix it."
     1. No: "I want to give you a fair offer" - "Let's go though the offer and see evidence that supports that"
     1. Yes: "I want you to feel that you are treated fairly all the times. Stop me if you feel you are not". Or, confirm
        deal with "That's fair".
-1. Discover what the other side is really buying (real motivations).
+1. Discover what the other side is really buying (**real motivations**).
 1. Bend their reality:
     1. **Anchor emotions**: "I have lousy offer for you, but I want to propose it to you before I go to someone else"
     1. Let the other side **anchor** number if you don't know the market value. Or throw **extreme anchor** yourself.
@@ -115,15 +113,15 @@ conversation.
 
 # Chapter 9: Bargaining
 
-1. Three types:
+1. Three **types**:
     1. Analyst - methodological, diligent, not in rush. Avert to mistakes.
     1. Accommodator - builds relations, keeps talking. Sociable.
     1. Assertive - time is money. Wants to be heard.
-1. Never be needy for the deal, ready-to-walk away mindset.
-1. Prepare
+1. Never be needy for the deal, **ready-to-walk** away mindset.
+1. **Prepare** for bargaining.
 1. Be ready to take the punch, like an extreme anchor. E.g. "let's leave the numbers aside, tell me how can we know we
    are doing both a good deal".
-1. Ackerman bargaining
+1. **Ackerman bargaining**:
     1. Set target price (goal)
     1. First offer 65%
     1. Calculate three raises: 85% (+20%), 95% (+10%), 100% (+5%)
@@ -133,18 +131,18 @@ conversation.
 
 # Chapter 10: Black swans
 
-1. Uncover black swans, bits of crucial information that can change the deal.
-1. Three types of leverage:
+1. Uncover **black swans**, bits of crucial information that can change the deal.
+1. Three types of **leverage**:
     1. Positive - you have something the other side wants,
     1. Negative - you can inflict loss,
     1. Normative - address the counterpart rules or moral framework.
-1. Understand the other side "religion", world view.
+1. Understand the other side **"religion"**, world view.
 1. Mistakes why others appear **crazy**:
     1. They are **ill-informed**
     1. They are **constrained**
     1. They have **other interests**
-1. Get face time.
-1. Similarity principle. Find common ground, build empathy.
+1. Get **face time**.
+1. **Similarity principle**. Find common ground, build empathy.
 1. Use labeling or **mislabeling**: "Seems like the seller does not believe in prospects of this property.
 1. Review notes, confront what your heard.
 
