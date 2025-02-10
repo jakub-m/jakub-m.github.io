@@ -1,8 +1,8 @@
 #!/bin/bash
 
 set -eu
-set -x
 set -o pipefail
+# set -x
 
 source_dir="$1"
 app_name="$2"
