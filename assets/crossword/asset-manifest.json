@@ -1,0 +1,14 @@
+{
+  "files": {
+    "main.css": "/crossword/static/css/main.0b78ac45.css",
+    "main.js": "/crossword/static/js/main.b68c19c8.js",
+    "static/media/crossword_bg.wasm": "/crossword/static/media/crossword_bg.b8000749e46f2cf9a4c1.wasm",
+    "index.html": "/crossword/index.html",
+    "main.0b78ac45.css.map": "/crossword/static/css/main.0b78ac45.css.map",
+    "main.b68c19c8.js.map": "/crossword/static/js/main.b68c19c8.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.0b78ac45.css",
+    "static/js/main.b68c19c8.js"
+  ]
+}
