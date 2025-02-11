@@ -19,8 +19,11 @@ if [[ -e "$source_dir/dist" ]]; then
 fi
 
 path_manifest_json=$(find $target_dir -name "manifest.json")
-path_main_js=$(find $target_dir -name 'main.*.js')
+path_main_js=$(find $target_dir -name 'main.*.js' -or -name 'bundle*.js')
 path_main_css=$(find $target_dir -name 'main.*.css')
+SKIP_LAYOUT=${SKIP_LAYOUT:-}
+
+if [[ -z "$SKIP_LAYOUT" ]]; then 
 
 >"_layouts/${app_name_und}.html" cat<<EOF
 <!DOCTYPE html>
@@ -31,9 +34,9 @@ path_main_css=$(find $target_dir -name 'main.*.css')
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#000000">
 <meta name="description" content="">
-<link rel="apple-touch-icon" href="/logo192.png">
 <link rel="manifest" href="/${path_manifest_json}">
-<script defer src="/${path_main_js}"></script><link href="/${path_main_css}" rel="stylesheet">
+<script defer src="/${path_main_js}"></script>
+<link href="/${path_main_css}" rel="stylesheet">
 </head>
 <body>
 <noscript>You need to enable JavaScript to run this app.</noscript>
@@ -42,6 +45,9 @@ path_main_css=$(find $target_dir -name 'main.*.css')
 </html>
 EOF
 
+else
+    echo "SKIP_LAYOUT set, skipping layout"
+fi
 
 
 _date=$(tscalc -f %Y-%m-%d)
