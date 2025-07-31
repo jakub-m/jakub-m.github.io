@@ -46,30 +46,30 @@ in:
 
 Power plant working:
 
-  <video width="300em" controls>
-    <source src="assets/arduino-bike/35_power_plant.mov" type="video/quicktime">
+  <video controls>
+    <source src="assets/arduino-bike/35_power_plant.mp4" type="video/quicktime">
     Your browser does not support the video tag.
     </source>
   </video>
-  <a href="assets/arduino-bike/35_power_plant.mov">mov</a>
+  <a href="assets/arduino-bike/35_power_plant.mp4">file</a>
 
 The game:
 
-  <video width="300em" controls>
-    <source src="assets/arduino-bike/40_game_only.mov" type="video/quicktime">
+  <video controls>
+    <source src="assets/arduino-bike/40_game_only.mp4" type="video/quicktime">
     Your browser does not support the video tag.
     </source>
   </video>
-  <a href="assets/arduino-bike/40_game_only.mov">mov</a>
+  <a href="assets/arduino-bike/40_game_only.mp4">file</a>
 
 Game and bike at work:
 
-  <video width="300em" controls>
-    <source src="assets/arduino-bike/50_full_setup.mov" type="video/quicktime">
+  <video controls>
+    <source src="assets/arduino-bike/50_full_setup.mp4" type="video/quicktime">
     Your browser does not support the video tag.
     </source>
   </video>
-  <a href="assets/arduino-bike/50_full_setup.mov">mov</a>
+  <a href="assets/arduino-bike/50_full_setup.mp4">file</a>
 
 And deployed:
 
