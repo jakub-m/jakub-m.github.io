@@ -46,7 +46,7 @@ in:
 
 Power plant working:
 
-  <video controls>
+  <video width="300em" controls>
     <source src="assets/arduino-bike/35_power_plant.mp4" type="video/quicktime">
     Your browser does not support the video tag.
     </source>
@@ -55,7 +55,7 @@ Power plant working:
 
 The game:
 
-  <video controls>
+  <video width="300em" controls>
     <source src="assets/arduino-bike/40_game_only.mp4" type="video/quicktime">
     Your browser does not support the video tag.
     </source>
@@ -64,7 +64,7 @@ The game:
 
 Game and bike at work:
 
-  <video controls>
+  <video width="300em" controls>
     <source src="assets/arduino-bike/50_full_setup.mp4" type="video/quicktime">
     Your browser does not support the video tag.
     </source>
