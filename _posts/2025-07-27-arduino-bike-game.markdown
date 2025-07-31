@@ -51,6 +51,7 @@ Power plant working:
     Your browser does not support the video tag.
     </source>
   </video>
+  <a href="assets/arduino-bike/35_power_plant.mov">mov</a>
 
 The game:
 
@@ -59,6 +60,7 @@ The game:
     Your browser does not support the video tag.
     </source>
   </video>
+  <a href="assets/arduino-bike/40_game_only.mov">mov</a>
 
 Game and bike at work:
 
@@ -67,6 +69,7 @@ Game and bike at work:
     Your browser does not support the video tag.
     </source>
   </video>
+  <a href="assets/arduino-bike/50_full_setup.mov">mov</a>
 
 And deployed:
 
