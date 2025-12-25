@@ -1,0 +1,15 @@
+gitGraph
+commit id: "empty"
+branch feat_1
+commit id: "added code.txt"
+checkout main
+commit id: "unrelated change"
+checkout feat_1
+branch feat_2
+commit id: "make fox white"
+checkout main
+commit id: "merge-squash feat_1"
+branch temp
+merge feat_1 id: "mearge feat_1 into temp"
+checkout feat_2
+merge temp id: 'merge temp with main and feat_1 to feat_2'

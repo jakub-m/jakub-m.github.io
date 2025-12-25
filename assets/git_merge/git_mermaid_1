@@ -1,0 +1,12 @@
+gitGraph
+commit id: "empty"
+branch feat_1
+commit id: "added code.txt"
+checkout main
+commit id: "unrelated change"
+checkout feat_1
+branch feat_2
+commit id: "make fox white"
+checkout main
+commit id: "merge-squash feat_1"
+
