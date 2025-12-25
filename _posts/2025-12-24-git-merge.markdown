@@ -5,7 +5,7 @@ date:  2025-12-24  00:00:00 -0000
 permalink: git-merge-squash
 ---
 
-Here is a git tick I use to spare myself resolving conflicts on repositories
+Here is a git trick I use to spare myself resolving conflicts on repositories
 with many features in-development, where one feature depends on other feature.
 Those conflicts happen when a feature is merged-squashed, and another feature
 now suddenly needs to resolve conflicts.
