@@ -132,8 +132,8 @@ checkout feat_2
 merge temp id: 'merge temp with main and feat_1 to feat_2'
 </div>
 
-At this point `feat_2` "knows" that it contains changes from `main` and from_1,
-so now the merge-squash into `main` will pass without conflicts.
+At this point `feat_2` "knows" that it contains changes from `main` and from
+`feat_1`, so now the merge-squash into `main` will pass without conflicts.
 
 ```
 git checkout main
