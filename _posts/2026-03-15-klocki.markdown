@@ -1,0 +1,14 @@
+---
+layout: post
+title: Klocki
+date: 2026-03-15 00:00:00 -0000
+permalink: klocki
+---
+
+State space visualisation of a 2d block game. Rust/WASM was the fun part, frontend vibe-coded.
+
+Inspired by https://youtu.be/YGLNyHd2w10?si=4WWi1Ur5HBK8CLqf
+
+The app here: https://jakub-m.github.io/klocki-app
+
+Source: https://github.com/jakub-m/klocki
