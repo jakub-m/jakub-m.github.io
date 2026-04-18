@@ -1,0 +1,13 @@
+---
+layout: post
+title: List of kid-friendly mobile games (updated)
+date: 2026-04-18 00:00:00 -0000
+permalink: games
+---
+
+A list of kid-friendly games online. I update as I find something interesting
+that sticks.
+
+- [Neal Fun](https://neal.fun/)
+- [enclose.horse](https://enclose.horse/)
+- [StarFling](https://playstarfling.com/)
