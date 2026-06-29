@@ -5,9 +5,15 @@ date: 2026-04-18 00:00:00 -0000
 permalink: games
 ---
 
-A list of kid-friendly games online. I update as I find something interesting
-that sticks.
 
-- [Neal Fun](https://neal.fun/)
+
+A list of kid-friendly games and stuff online. I update as I find something
+interesting that sticks.
+
 - [enclose.horse](https://enclose.horse/)
+- [Neal Fun](https://neal.fun/)
+- [Screen toys](https://screen.toys/)
 - [StarFling](https://playstarfling.com/)
+- [Tinywind - pixel pirate sailing](https://tinywind.io/)
+
+**Last updated - Jun 2026**
