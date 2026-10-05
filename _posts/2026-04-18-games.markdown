@@ -1,7 +1,7 @@
 ---
 layout: post
 title: List of kid-friendly mobile games (updated)
-date: 2026-04-18 00:00:00 -0000
+date: 2026-10-05 00:00:00 -0000
 permalink: games
 ---
 
@@ -12,9 +12,10 @@ interesting that sticks.
 
 - [Airport - from Liisa Apunen](https://airport.apunen.com/)
 - [enclose.horse](https://enclose.horse/)
+- [Hole punch](https://notoriousbfg.com/hole-punch/)
 - [Neal Fun](https://neal.fun/)
 - [Screen toys](https://screen.toys/)
 - [StarFling](https://playstarfling.com/)
 - [Tinywind - pixel pirate sailing](https://tinywind.io/)
 
-**Last updated - 07 2026**
+**Last updated - 10 2026**
