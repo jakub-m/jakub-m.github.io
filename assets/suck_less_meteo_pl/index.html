@@ -1,0 +1,811 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Weather</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1b1f24; --muted: #6b7280; --grid: #e5e7eb; --gridline: #9ca3af;
+    --air: #dc2626; --chill: #2563eb; --dew: #ca8a04; --zero: #9ca3af;
+    --night: rgba(100, 116, 139, 0.14); --fog: #facc15;
+    --rain: #2563eb; --sleet: #8b5cf6; --snow-ink: #0ea5e9; --pmax: #1e3a8a; --snow: #ffffff; --pcp-unknown: #9ca3af; --wind: #0d9488; --gust: #134e4a;
+    --cl-vlow: #3f3f46; --cl-low: #71717a; --cl-med: #b4b4bb; --cl-high: #ffffff;
+    --cl-edge: rgba(27, 31, 36, 0.55); --sky: rgba(96, 165, 250, 0.35);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1115; --fg: #e5e7eb; --muted: #9ca3af; --grid: #262a33; --gridline: #4b5563;
+      --air: #f87171; --chill: #60a5fa; --dew: #facc15; --zero: #6b7280;
+      --night: rgba(148, 163, 184, 0.12); --fog: #fde047; --gust: #5eead4; --pmax: #bfdbfe;
+      --cl-vlow: #52525b; --cl-low: #8b8b94; --cl-med: #c4c4cc; --cl-high: #ffffff;
+      --cl-edge: rgba(0, 0, 0, 0.8); --sky: rgba(59, 130, 246, 0.25);
+    }
+  }
+  body { margin: 0; padding: 16px; background: var(--bg); color: var(--fg);
+         font: 14px/1.4 system-ui, -apple-system, sans-serif; }
+  header { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline; margin-bottom: 12px; }
+  select { font: inherit; }
+  .radios label { margin-left: 6px; }
+  #err { color: #dc2626; }
+  #tip { position: fixed; z-index: 10; pointer-events: none; padding: 8px 10px; border-radius: 6px;
+         background: var(--bg); color: var(--fg); border: 1px solid var(--grid);
+         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18); font-size: 12px; white-space: nowrap; }
+  #tip .h { font-weight: 600; margin-bottom: 4px; }
+  #tip .r { color: var(--muted); font-weight: 400; }
+  #tip table { border-collapse: collapse; }
+  #tip td { padding: 1px 6px 1px 0; }
+  #tip td:last-child { font-variant-numeric: tabular-nums; }
+  .wrap { overflow-x: auto; }
+  /* drawn at a fixed pixel scale: same height for every model, longer forecasts scroll sideways */
+  #chart { display: block; }
+  svg text { fill: var(--fg); font-size: 10px; }
+  svg .muted { fill: var(--muted); }
+  svg .title { font-size: 12px; font-weight: 600; }
+  /* two-tone (background + gray dashes) so lines show on both day and night shading */
+  svg .grid-base { stroke: var(--bg); }
+  svg .grid { stroke: var(--gridline); stroke-dasharray: 3 3; }
+</style>
+</head>
+<body>
+<header>
+  <label>Place
+    <select id="place-select" data-nosave></select>
+  </label>
+  <label>Model
+    <select id="model">
+      <option value="um4_60">UM4 60 h</option>
+      <option value="um4_120">UM4 120 h</option>
+      <option value="gfs">GFS 240 h</option>
+    </select>
+  </label>
+  <span class="radios">Wind:
+    <label><input type="radio" name="wind-unit" id="wind-ms" value="ms" checked> m/s</label>
+    <label><input type="radio" name="wind-unit" id="wind-kt" value="kt"> kt</label>
+    <label><input type="radio" name="wind-unit" id="wind-bft" value="bft"> Bft</label>
+  </span>
+</header>
+<div id="err"></div>
+<div class="wrap"><svg id="chart" role="img" aria-label="Hourly weather forecast"></svg></div>
+<div id="tip" hidden></div>
+
+<script>
+// Location comes from the URL fragment: #<lat>,<lon> (e.g. #54.3520,18.6466).
+// Known places are shown by name when the coordinates match within ~1 km.
+const PLACES = [
+  { name: 'Gdańsk', lat: 54.3520, lon: 18.6466 },
+  { name: 'Elbląg', lat: 54.1522, lon: 19.4088 },
+];
+const DEFAULT_PLACE = PLACES[0];
+let LAT, LON;
+
+function parseHash() {
+  const m = decodeURIComponent(location.hash.slice(1)).match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/);
+  if (!m) return null;
+  const lat = +m[1], lon = +m[2];
+  return Math.abs(lat) <= 90 && Math.abs(lon) <= 180 ? { lat, lon } : null;
+}
+
+function applyLocation() {
+  const p = parseHash();
+  if (!p) {
+    // No/invalid fragment: use the default and write it into the URL (without a history entry).
+    history.replaceState(null, '', `#${DEFAULT_PLACE.lat.toFixed(4)},${DEFAULT_PLACE.lon.toFixed(4)}`);
+    return applyLocation();
+  }
+  LAT = p.lat; LON = p.lon;
+  const place = PLACES.find(q => Math.abs(q.lat - LAT) < 0.01 && Math.abs(q.lon - LON) < 0.015);
+  const coords = `${Math.abs(LAT).toFixed(4)}° ${LAT >= 0 ? 'N' : 'S'}, ${Math.abs(LON).toFixed(4)}° ${LON >= 0 ? 'E' : 'W'}`;
+  // Place selector: known places + the raw coordinates when the URL has other coordinates.
+  const sel = document.getElementById('place-select');
+  sel.replaceChildren(...PLACES.map((q, k) => new Option(q.name, k)),
+                      ...(place ? [] : [new Option(coords, 'custom')]));
+  sel.value = place ? PLACES.indexOf(place) : 'custom';
+  document.title = `${place ? place.name : coords} · Weather`;
+}
+const BASE = 'https://devmgramapi.meteo.pl/meteorograms';
+const TZ = 'Europe/Warsaw';
+const NS = 'http://www.w3.org/2000/svg';
+
+const $ = id => document.getElementById(id);
+const fmtHour = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', timeZone: TZ });
+const fmtDay  = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: TZ });
+const fmtFull = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: TZ });
+
+function el(tag, attrs, parent, text) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (text != null) e.textContent = text;
+  if (parent) parent.appendChild(e);
+  return e;
+}
+
+// Sunrise/sunset (UTC ms) for the UTC calendar day containing `ms`, using the
+// standard sunrise equation (NOAA-style approximation, ~1 min accuracy).
+// Returns { rise, set }, or { polar: 'day' | 'night' } when the sun never sets/rises.
+function sunTimes(ms, lat, lon) {
+  const rad = Math.PI / 180, J2000 = 2451545.0, UNIX_JD = 2440587.5;
+  const n = Math.floor(ms / 864e5) + UNIX_JD - J2000 + 0.0008 + 0.5; // days since J2000, at noon UTC
+  const Jstar = Math.round(n) - lon / 360;                           // mean solar noon
+  const M = (357.5291 + 0.98560028 * Jstar) % 360;                   // solar mean anomaly
+  const C = 1.9148 * Math.sin(M * rad) + 0.02 * Math.sin(2 * M * rad) + 0.0003 * Math.sin(3 * M * rad);
+  const lambda = (M + C + 180 + 102.9372) % 360;                     // ecliptic longitude
+  const Jtransit = J2000 + Jstar + 0.0053 * Math.sin(M * rad) - 0.0069 * Math.sin(2 * lambda * rad);
+  const sinDec = Math.sin(lambda * rad) * Math.sin(23.4397 * rad);
+  const cosDec = Math.cos(Math.asin(sinDec));
+  // -0.833°: refraction + solar disc radius
+  const cosW = (Math.sin(-0.833 * rad) - Math.sin(lat * rad) * sinDec) / (Math.cos(lat * rad) * cosDec);
+  if (cosW < -1) return { polar: 'day' };
+  if (cosW > 1) return { polar: 'night' };
+  const w = Math.acos(cosW) / rad / 360;
+  const toMs = jd => (jd - UNIX_JD) * 864e5;
+  return { rise: toMs(Jtransit - w), set: toMs(Jtransit + w) };
+}
+
+// Night intervals [from, to] (ms) covering [start, end].
+function nightIntervals(start, end, lat, lon) {
+  const days = [];
+  for (let d = Math.floor(start / 864e5) - 1; d <= Math.floor(end / 864e5) + 1; d++) {
+    const s = sunTimes(d * 864e5, lat, lon);
+    if (s.polar === 'day') days.push([d * 864e5, (d + 1) * 864e5]);
+    else if (!s.polar) days.push([s.rise, s.set]);
+  }
+  const nights = [];
+  let cur = start;
+  for (const [rise, set] of days) {
+    if (rise > cur) nights.push([cur, Math.min(rise, end)]);
+    cur = Math.max(cur, set);
+    if (cur >= end) break;
+  }
+  if (cur < end) nights.push([cur, end]);
+  return nights.filter(([a, b]) => b > a);
+}
+
+async function fetchForecast(model) {
+  const avail = await (await fetch(`${BASE}/available`)).json();
+  const runs = avail[model];
+  if (!runs?.length) throw new Error(`no runs available for ${model}`);
+  // Newest run first; fall back to the previous one if the newest isn't served yet.
+  for (const date of runs.slice(-2).reverse()) {
+    const r = await fetch(`${BASE}/${model}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ point: { lat: String(LAT), lon: String(LON) }, date }),
+    });
+    if (r.ok) return r.json();
+  }
+  throw new Error('forecast request failed');
+}
+
+function render(d) {
+  const svg = $('chart');
+  svg.replaceChildren();
+  const nightG = el('g', {}, svg); // drawn first so it sits behind everything
+
+  const get = k => d[k]?.data ?? null;
+  const ref = Object.values(d).find(v => Array.isArray(v?.data));
+  const n = ref.data.length, t0 = +ref.first_timestamp, dt = ref.interval;
+  const times = Array.from({ length: n }, (_, i) => new Date((t0 + i * dt) * 1000));
+  const labelStep = Math.max(1, Math.round(10800 / dt)); // a label every ~3 h
+
+  const BW = 16, L = 120, R = 12, GAP = 30;
+  const PANEL_H = 140; // plot height, the same for every chart
+  const W = L + n * BW + R;
+  const x = i => L + i * BW;
+  // Continuous time → x; hour i is centred in its column.
+  const xt = ms => L + BW / 2 + (ms / 1000 - t0) / dt * BW;
+  let y0 = 24; // room for day names at the top
+
+  // Generic panel: title, y-scale [lo, hi], grid, axis labels, hour row; returns a y() mapper.
+  const panels = []; // vertical extent of each panel, for the tooltip
+  // `tf` optionally transforms values before linear mapping (e.g. Math.sqrt).
+  // `below` reserves extra room between the plot and its hour labels (e.g. probability pies).
+  function panel(key, title, h, lo, hi, unit, ticks, tf = v => v, below = 0) {
+    const top = y0 + 16, bottom = top + h;
+    panels.push({ key, from: y0, to: bottom + below + GAP, top, bottom });
+    el('text', { x: L, y: y0 + 10, class: 'title' }, svg, title);
+    const y = v => bottom - (tf(v) - tf(lo)) / (tf(hi) - tf(lo)) * h;
+    ticks ??= [lo, (lo + hi) / 2, hi].map(v => ({ v, label: `${+v.toFixed(1)}${unit}`, grid: true }));
+    for (const { v, label, grid } of ticks) {
+      if (grid) {
+        el('line', { x1: L, x2: W - R, y1: y(v), y2: y(v), class: 'grid-base' }, svg);
+        el('line', { x1: L, x2: W - R, y1: y(v), y2: y(v), class: 'grid' }, svg);
+      }
+      el('text', { x: L - 6, y: y(v) + 3, 'text-anchor': 'end', class: 'muted' }, svg, label);
+    }
+    times.forEach((tm, i) => {
+      if (i % labelStep === 0)
+        el('text', { x: x(i) + BW / 2, y: bottom + below + 12, 'text-anchor': 'middle', class: 'muted' }, svg,
+           fmtHour.format(tm));
+    });
+    y0 = bottom + below + GAP;
+    return { y, top, bottom };
+  }
+
+  // Day separators and labels across the whole chart (drawn after panels, below).
+  const daySplits = [];
+  for (let i = 0; i < n; i++)
+    if (i === 0 || fmtDay.format(times[i]) !== fmtDay.format(times[i - 1])) daySplits.push(i);
+
+  // 1. Temperature: air (red) and wind chill (blue) lines with min–max bands, dew point dashed.
+  const t = get('airtmp_point'), dew = get('dwptmp_point');
+  const series = [
+    { key: 'airtmp', name: 'Air', color: 'var(--air)' },
+    { key: 'wchill', name: 'Wind chill', color: 'var(--chill)' },
+  ].map(s => ({ ...s, v: get(`${s.key}_point`), mn: get(`${s.key}_min`), mx: get(`${s.key}_max`) }))
+   .filter(s => s.v);
+  if (series.length || dew) {
+    const all = [dew, ...series.flatMap(s => [s.v, s.mn, s.mx])].filter(Boolean).flat();
+    let lo = Math.floor(Math.min(...all) - 1);
+    let hi = Math.ceil(Math.max(...all) + 1);
+    let tVals;
+    if (lo < 0 && hi > 0) {
+      // Zero in range: grid on multiples of a whole-degree step, so 0 always gets a line.
+      const step = Math.ceil((hi - lo) / 4);
+      lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step;
+      tVals = [];
+      for (let v = lo; v <= hi; v += step) tVals.push(v);
+    } else {
+      while ((hi - lo) % 4) lo -= 1; // 5 grid lines (quarters), all on whole degrees
+      tVals = [0, 1, 2, 3, 4].map(k => lo + k * (hi - lo) / 4);
+    }
+    const tTicks = tVals.map(v => ({ v, label: `${v}°`, grid: true }));
+    const { y, top, bottom } = panel('temp', 'Temperature (°C)', PANEL_H, lo, hi, '°', tTicks);
+    const cx = i => x(i) + BW / 2;
+    const path = (a, idx = a.map((_, i) => i)) =>
+      idx.map((i, k) => `${k ? 'L' : 'M'}${cx(i)},${y(a[i])}`).join('');
+    const line = (d, stroke, extra = {}) =>
+      el('path', { d, fill: 'none', stroke, 'stroke-width': 2, 'stroke-linejoin': 'round', ...extra }, svg);
+
+    if (lo < 0 && hi > 0)
+      el('line', { x1: L, x2: W - R, y1: y(0), y2: y(0), stroke: 'var(--zero)' }, svg);
+    for (const s of series) {
+      if (!s.mn || !s.mx) continue;
+      const back = s.mn.map((_, i) => i).reverse();
+      el('path', { d: path(s.mx) + path(s.mn, back).replace(/^M/, 'L') + 'Z',
+                   fill: s.color, 'fill-opacity': 0.18 }, svg);
+    }
+    if (dew) line(path(dew), 'var(--dew)', { 'stroke-dasharray': '6 4' });
+    for (const s of series) line(path(s.v), s.color);
+
+    // Air temperature labels every ~3 h, above the band.
+    if (t) t.forEach((v, i) => {
+      if (i % labelStep) return;
+      const yy = y(Math.max(v, series[0].mx?.[i] ?? v)) - 5;
+      el('text', { x: cx(i), y: Math.max(top + 8, yy), 'text-anchor': 'middle' }, svg, Math.round(v));
+    });
+
+    // Legend next to the panel title.
+    const legend = [...series.map(s => ({ name: s.name + (s.mn ? ' (min–max band)' : ''), color: s.color })),
+                    ...(dew ? [{ name: 'Dew point', color: 'var(--dew)', dash: '6 4' }] : [])];
+    let lx = L + 110;
+    for (const g of legend) {
+      line(`M${lx},${top - 10}h18`, g.color, g.dash ? { 'stroke-dasharray': g.dash } : {});
+      el('text', { x: lx + 23, y: top - 7 }, svg, g.name);
+      lx += 30 + g.name.length * 5.5;
+    }
+
+  }
+
+  // 2. Precipitation: mm/h bars (average, solid colour = type), tick at the max in area
+  // (like wind gusts). Type codes as decoded from meteo.pl's own legend ("Deszcz/Śnieg/Deszcz
+  // ze śniegiem"): 1 = rain, 2 = snow, 3 = rain with snow. Any other code is drawn gray.
+  // Storm dots: shown where storm_max > 0, coloured by flash_max (lightning flashes / h),
+  // using meteo.pl's classes.
+  const p = get('pcpttl_aver'), pmx = get('pcpttl_max'), pp = get('pcpttlprob_point'),
+        pt = get('pcpttl_type_max'), stm = get('storm_max'), fl = get('flash_max');
+  const stormClass = i => {
+    if (!stm || !(stm[i] > 0)) return null;
+    const n = fl?.[i] ?? 0;
+    return n >= 30 ? { name: 'strong storm', detail: '30+ flashes/h', color: '#ef4444' }
+         : n >= 10 ? { name: 'moderate storm', detail: '10–29 flashes/h', color: '#f97316' }
+         : n > 0   ? { name: 'weak storm', detail: '1–9 flashes/h', color: '#facc15' }
+         :           { name: 'storm possible', color: '#ffffff' };
+  };
+  // Fill patterns: sleet = single diagonal hatching, snow = double (cross) hatching.
+  {
+    const defs = el('defs', {}, svg);
+    const hatch = (id, bg, ink, cross) => {
+      const P = 10 / 3, SW = 1.5; // line spacing / width (1.5× the original density)
+      const pat = el('pattern', { id, width: P, height: P, patternUnits: 'userSpaceOnUse',
+                                  patternTransform: 'rotate(45)' }, defs);
+      el('rect', { width: P, height: P, fill: bg }, pat);
+      el('line', { x1: 0, y1: 0, x2: 0, y2: P, stroke: ink, 'stroke-width': SW }, pat);
+      if (cross) el('line', { x1: 0, y1: 0, x2: P, y2: 0, stroke: ink, 'stroke-width': SW }, pat);
+    };
+    hatch('hatch-sleet', 'var(--bg)', 'var(--sleet)', false);
+    hatch('hatch-snow', 'var(--bg)', 'var(--snow-ink)', true);
+  }
+  const PCP_TYPES = {
+    // Rain: empty (outline only).
+    0: { name: 'none reported', color: 'none', edge: 'var(--rain)' },
+    1: { name: 'rain',  color: 'none', edge: 'var(--rain)' },
+    2: { name: 'snow',  color: 'url(#hatch-snow)', edge: 'var(--snow-ink)' },
+    3: { name: 'sleet (rain + snow)', color: 'url(#hatch-sleet)', edge: 'var(--sleet)' },
+  };
+  const pcpType = i => {
+    const code = pt?.[i];
+    if (code == null) return PCP_TYPES[1];
+    return PCP_TYPES[code] ?? { name: `unknown (code ${code})`, color: 'var(--pcp-unknown)' };
+  };
+  // Rain intensity by rain-gauge rate (Wikipedia, "Precipitation types"):
+  // light < 2.5 mm/h, moderate 2.5–7.6, heavy 7.6–50, violent > 50.
+  // A class boundary is drawn once the forecast reaches 50% of it.
+  const PCP_LEVELS = [
+    { name: 'Light', rate: 0 }, { name: 'Moderate', rate: 2.5 },
+    { name: 'Heavy', rate: 7.6 }, { name: 'Violent', rate: 50 },
+  ];
+  const pcpLevel = v => (v > 0 ? [...PCP_LEVELS].reverse().find(l => v >= l.rate).name.toLowerCase() : 'none');
+  // Snow intensity is classified by visibility instead: light > 1 km, moderate 0.5–1 km, heavy < 0.5 km.
+  const vis = get('visibl_min');
+  const snowLevel = i => (vis ? (vis[i] > 1000 ? 'light' : vis[i] >= 500 ? 'moderate' : 'heavy') : null);
+  if (p) {
+    const pMax = Math.max(...p, ...(pmx ?? []));
+    const levels = PCP_LEVELS.filter(l => l.rate > 0 && pMax >= 0.5 * l.rate);
+    const top0 = Math.max(pMax, ...levels.map(l => l.rate));
+    const hi = Math.ceil(top0 * 1.15 * 4) / 4 || 0.25;
+    const PH = PANEL_H, sq = Math.sqrt;
+    // Left labels: 0 and each threshold rate (dropped if <10 px from the previous one).
+    let prevPx = -Infinity;
+    const ticks = [{ v: 0 }, ...levels.map(l => ({ v: l.rate }))].map(({ v }) => {
+      const px = sq(v / hi) * PH, show = px - prevPx >= 10;
+      if (show) prevPx = px;
+      return { v, label: show ? (v ? `${+v.toFixed(2)}` : '0 mm/h') : '', grid: true };
+    });
+    const PIE = pp ? 22 : 0; // row for probability pies under the x axis
+    const { y, top, bottom } = panel('precip', 'Precipitation', PH, 0, hi, ' mm/h', ticks, sq, PIE);
+    // Probability of precipitation: per hour, only the probability slice of a pie
+    // (from 12 o'clock, clockwise); 100% = full disc, 0% = nothing.
+    if (pp) {
+      const r = 6, cy = bottom + 13;
+      el('text', { x: L - 6, y: cy + 3, 'text-anchor': 'end', class: 'muted', 'font-style': 'italic' }, svg, 'Chance');
+      pp.forEach((prob, i) => {
+        const f = Math.max(0, Math.min(1, prob / 100)), cx = x(i) + BW / 2;
+        if (f < 0.01) return;
+        // Same colour as the hour's precipitation bar (outlined for white snow).
+        const ty = pcpType(i), paint = { fill: ty.color, ...(ty.edge ? { stroke: ty.edge } : {}) };
+        if (f > 0.99) return el('circle', { cx, cy, r, ...paint }, svg);
+        const a = f * 2 * Math.PI, ex = cx + r * Math.sin(a), ey = cy - r * Math.cos(a);
+        el('path', { d: `M${cx},${cy}L${cx},${cy - r}A${r},${r} 0 ${f > 0.5 ? 1 : 0} 1 ${ex},${ey}Z`,
+                     ...paint }, svg);
+      });
+    }
+    // Class names right-aligned next to the axis like the numbers, centred in their band;
+    // nudged away from any numeric label closer than 10 px.
+    const bounds = [0, ...levels.map(l => l.rate), hi];
+    const tickYs = ticks.filter(t => t.label).map(t => y(t.v));
+    PCP_LEVELS.slice(0, levels.length + 1).forEach((l, k) => {
+      const lo = y(bounds[k]), up = y(bounds[k + 1]);
+      let yc = (lo + up) / 2;
+      for (const ty of tickYs) if (Math.abs(yc - ty) < 10) yc = ty + (yc < ty ? -10 : 10);
+      if (yc > lo + 2 || yc < up - 2) return; // band too thin to hold a label
+      el('text', { x: L - 6, y: yc + 3, 'text-anchor': 'end', class: 'muted',
+                   'font-style': 'italic' }, svg, l.name);
+    });
+    p.forEach((v, i) => {
+      if (v <= 0) return;
+      const ty = pcpType(i);
+      el('rect', { x: x(i) + 2, width: BW - 4, y: y(v), height: Math.max(1, y(0) - y(v)), rx: 2,
+                   fill: ty.color, ...(ty.edge ? { stroke: ty.edge, 'stroke-width': 1.5 } : {}) }, svg);
+    });
+    // Max in area: horizontal tick at the max value (like wind gusts); red at the top if off-scale.
+    let clipped = false;
+    if (pmx) pmx.forEach((v, i) => {
+      if (!(v > 0)) return;
+      const over = v > hi;
+      clipped ||= over;
+      el('line', { x1: x(i) + 1, x2: x(i) + BW - 1, y1: y(Math.min(v, hi)), y2: y(Math.min(v, hi)),
+                   stroke: over ? '#ef4444' : 'var(--pmax)', 'stroke-width': 2 }, svg);
+    });
+    // Storm dots along the top of the panel.
+    const storms = new Map();
+    for (let i = 0; i < n; i++) {
+      const sc = stormClass(i);
+      if (!sc) continue;
+      storms.set(sc.name, sc);
+      el('circle', { cx: x(i) + BW / 2, cy: top + 5, r: 4.5, fill: sc.color, stroke: '#565656' }, svg);
+    }
+    // Legend: types present, max tick, storm classes present.
+    const present = new Map();
+    p.forEach((v, i) => { if (v > 0 && pt?.[i] !== 0) present.set(pcpType(i).name, pcpType(i)); });
+    const legend = [...present.values()];
+    if (pmx) legend.push({ name: 'max', kind: 'max' });
+    if (clipped) legend.push({ name: 'max above scale', kind: 'clip' });
+    legend.push(...[...storms.values()].map(s => ({ ...s, kind: 'storm' })));
+    let lx = L + 110;
+    for (const ty of legend) {
+      if (ty.kind === 'max' || ty.kind === 'clip') {
+        el('line', { x1: lx, x2: lx + 12, y1: top - 10, y2: top - 10, 'stroke-width': 2,
+                     stroke: ty.kind === 'clip' ? '#ef4444' : 'var(--pmax)' }, svg);
+        lx += 17;
+      } else if (ty.kind === 'storm') {
+        el('circle', { cx: lx + 5, cy: top - 10, r: 4.5, fill: ty.color, stroke: '#565656' }, svg);
+        lx += 15;
+      } else if (ty.color) {
+        el('rect', { x: lx, y: top - 15, width: 10, height: 10, rx: 2, fill: ty.color,
+                     ...(ty.edge ? { stroke: ty.edge } : {}) }, svg);
+        lx += 15;
+      }
+      el('text', { x: lx, y: top - 7, class: ty.color || ty.kind ? '' : 'muted' }, svg, ty.name);
+      lx += 15 + ty.name.length * 5.5;
+    }
+  }
+
+  // 3. Clouds: one row per layer, dark gray (very low) → white (high).
+  const cloudLayers = [
+    { key: 'cldhigh_aver', name: 'High',     color: 'var(--cl-high)' },
+    { key: 'cldmed_aver',  name: 'Medium',   color: 'var(--cl-med)' },
+    { key: 'cldlow_aver',  name: 'Low',      color: 'var(--cl-low)' },
+    { key: 'cldvlow_aver', name: 'Very low', color: 'var(--cl-vlow)' },
+  ].map(s => ({ ...s, v: get(s.key) })).filter(s => s.v);
+  let c = get('cldtot_aver');
+  // API sends 0–1 fractions despite unit "%".
+  const toPct = a => (a && Math.max(...a) <= 1 ? a.map(v => v * 100) : a);
+  c = toPct(c);
+  cloudLayers.forEach(s => { s.v = toPct(s.v); });
+  const fog = toPct(get('fog_max'));
+  const hasFog = !!fog && fog.some(v => v > 0);
+  if (cloudLayers.length) {
+    // One row per layer, very low at the bottom; each hour is a dashed segment whose
+    // ink fraction equals the cover (100% = solid, 50% = half dashes, 0% = nothing).
+    const rows = [...cloudLayers].reverse(); // very low → high, bottom → top
+    const ticks = rows.map((s, k) => ({ v: k + 0.5, label: s.name.replace('Very low', 'V. low') }));
+    const { y, top, bottom } = panel('cloud', 'Clouds',
+                                     PANEL_H, 0, rows.length, '', ticks);
+    el('rect', { x: L, y: top, width: n * BW, height: bottom - top, fill: 'var(--sky)' }, svg);
+    // Fog: narrow yellow bars behind the cloud rows (only hours with fog > 0), 0% at the bottom of the
+    // panel, 100% at the top, with a thin dark edge so they stand out from the cloud rows.
+    if (hasFog) {
+      const fy = v => bottom - Math.min(v, 100) / 100 * (bottom - top);
+      const FW = 6;
+      fog.forEach((v, i) => {
+        if (!(v > 0)) return;
+        el('rect', { x: x(i) + (BW - FW) / 2, width: FW, y: fy(v), height: Math.max(1.5, bottom - fy(v)),
+                     fill: 'var(--fog)', stroke: 'var(--cl-edge)', 'stroke-width': 1 }, svg);
+      });
+      const lx = L + 60;
+      el('rect', { x: lx + 6, y: top - 16, width: FW, height: 11, fill: 'var(--fog)',
+                   stroke: 'var(--cl-edge)', 'stroke-width': 1 }, svg);
+      el('text', { x: lx + 17, y: top - 7 }, svg, 'Fog (0–100%, bottom to top)');
+    }
+    const P = (BW - 2) / 4; // dash period: 4 dashes per hour
+    rows.forEach((s, k) => {
+      const yy = y(k + 0.5);
+      s.v.forEach((pct, i) => {
+        const f = Math.max(0, Math.min(1, pct / 100));
+        if (f < 0.02) return;
+        el('line', { x1: x(i) + 1, x2: x(i) + BW - 1, y1: yy, y2: yy, stroke: s.color,
+                     'stroke-width': 0.7 * PANEL_H / rows.length, 'stroke-dasharray': f >= 0.98 ? 'none' : `${f * P} ${(1 - f) * P}` }, svg);
+      });
+    });
+  }
+
+  // 4. Wind: speed bars, gust ticks, direction arrows, Beaufort scale.
+  // Beaufort scale (Wikipedia), lower bound of each force in m/s.
+  const BEAUFORT = [
+    [0, 0, 'calm'], [1, 0.5, 'light air'], [2, 1.6, 'light breeze'], [3, 3.4, 'gentle breeze'],
+    [4, 5.5, 'moderate breeze'], [5, 8.0, 'fresh breeze'], [6, 10.8, 'strong breeze'],
+    [7, 13.9, 'near gale'], [8, 17.2, 'gale'], [9, 20.8, 'strong gale'], [10, 24.5, 'storm'],
+    [11, 28.5, 'violent storm'], [12, 32.7, 'hurricane force'],
+  ].map(([force, from, name]) => ({ force, from, name }));
+  const beaufort = ms => [...BEAUFORT].reverse().find(b => ms >= b.from);
+  const cap = s => s[0].toUpperCase() + s.slice(1);
+  // Continuous Beaufort position: force k occupies [k-0.5, k+0.5) (force 0: [0, 0.5)),
+  // interpolated linearly between the table's m/s limits, so bands have equal height.
+  const toBft = ms => {
+    const b = beaufort(ms), k = b.force, next = BEAUFORT[k + 1];
+    const lo = k ? k - 0.5 : 0;
+    const frac = next ? (ms - b.from) / (next.from - b.from) : (ms - b.from) / 4;
+    return Math.min(lo + (k ? 1 : 0.5) * frac, 12.5);
+  };
+  // Display unit: m/s, kt or Bft (speeds come in m/s).
+  const KT = 1.943844;
+  const wu = $('wind-bft').checked ? 'Bft' : $('wind-kt').checked ? 'kt' : 'm/s';
+  const wk = wu === 'kt' ? KT : 1;
+  const wsMs = get('wind10_sd_true_prev_point'), wgMs = get('wind_gust_max'),
+        wd = get('wind10_dr_deg_true_prev_point');
+  const conv = a => a && a.map(v => (wu === 'Bft' ? toBft(v) : v * wk));
+  const ws = conv(wsMs), wg = conv(wgMs);
+  if (ws) {
+    // Beaufort forces up to the forecast max (wind or gust) plus the next one above it.
+    const msMax = Math.max(...wsMs, ...(wgMs ?? [0]));
+    const above = BEAUFORT.findIndex(b => b.from > msMax);
+    const shown = BEAUFORT.slice(1, above < 0 ? BEAUFORT.length : above + 1); // forces whose lower edge is drawn
+    const WH = PANEL_H;
+    const ARW = wd ? 22 : 0; // row for direction arrows under the x axis
+    let y, top, bottom, edges;
+    if (wu === 'Bft') {
+      // Linear in force: every band equally tall; force number + name centred in each band.
+      const hi = (shown.at(-1)?.force ?? 1) + 0.5;
+      edges = [0, ...shown.map(b => b.force - 0.5), hi];
+      const ticks = [
+        ...shown.filter(b => b.force % 2 === 0).map(b => ({ v: b.force - 0.5, label: '', grid: true })),
+        ...BEAUFORT.slice(0, shown.length + 1).map((b, k) => ({ v: (edges[k] + edges[k + 1]) / 2, label: `${b.force}` })),
+      ];
+      ({ y, top, bottom } = panel('wind', 'Wind (Beaufort)', WH, 0, hi, '', ticks, undefined, ARW));
+    } else {
+      // Square-root scale so the closely spaced low forces stay readable;
+      // boundary speeds right next to the axis, unit on 0.
+      const wMax = msMax * wk;
+      const hi = Math.max(wMax, (shown.at(-1)?.from ?? 1) * wk) * 1.06;
+      let prevPx = -Infinity;
+      // Gridlines only at the lower edge of every second force (the named ones), to keep it calm.
+      const ticks = [{ v: 0 }, ...shown.filter(b => b.force % 2 === 0).map(b => ({ v: b.from * wk }))].map(({ v }) => {
+        const px = Math.sqrt(v / hi) * WH, show = px - prevPx >= 10;
+        if (show) prevPx = px;
+        const txt = wu === 'kt' ? `${Math.round(v)}` : `${+v.toFixed(1)}`;
+        return { v, label: show ? (v ? txt : `0 ${wu}`) : '', grid: true };
+      });
+      ({ y, top, bottom } = panel('wind', 'Wind', WH, 0, hi, ` ${wu}`, ticks, Math.sqrt, ARW));
+      edges = [0, ...shown.map(b => b.from * wk), hi];
+    }
+    // Beaufort description (italic) centred in its band, in a column left of the numbers.
+    BEAUFORT.slice(0, shown.length + 1).forEach((b, k) => {
+      const lo = y(edges[k]), up = y(edges[k + 1]);
+      if (lo - up < 9) return; // band too thin for a label
+      if (b.force % 2) return;  // name every second force only: calm, light breeze, … storm
+      el('text', { x: L - 32, y: (lo + up) / 2 + 3, 'text-anchor': 'end', class: 'muted',
+                   'font-style': 'italic' }, svg, cap(b.name.replace(' breeze', '')));
+    });
+    ws.forEach((v, i) => {
+      const cx = x(i) + BW / 2;
+      // Wind speed: horizontal tick at the value, like the gust tick (teal vs dark gust).
+      el('line', { x1: x(i) + 1, x2: x(i) + BW - 1, y1: y(v), y2: y(v),
+                   stroke: 'var(--wind)', 'stroke-width': 2 }, svg);
+      if (wg) el('line', { x1: x(i) + 1, x2: x(i) + BW - 1, y1: y(wg[i]), y2: y(wg[i]),
+                           stroke: 'var(--gust)', 'stroke-width': 2 }, svg);
+      // Direction arrow (pointing where the wind blows) per hour, in the row under the x axis.
+      if (wd)
+        el('path', { d: 'M0,-6 L4,2 L1,1 L1,6 L-1,6 L-1,1 L-4,2 Z', fill: 'var(--fg)',
+                     transform: `translate(${cx},${bottom + 13}) rotate(${wd[i] + 180}) scale(0.85)` }, svg);
+    });
+    if (wd) el('text', { x: L - 6, y: bottom + 16, 'text-anchor': 'end', class: 'muted', 'font-style': 'italic' },
+               svg, 'Direction');
+  }
+
+  // 5. Pressure (sea level, hPa): line with the area underneath coloured per hour by the
+  // hour's pressure class (ColorBrewer RdYlGn, 10 fixed colours): green = deep low … red = very high.
+  // 10 classes in 5 hPa steps, ColorBrewer RdYlGn (11-class) without its pale middle yellow.
+  const PRES_BANDS = [
+    { to: 990,  color: '#006837', name: 'deep low' },
+    { to: 995,  color: '#1a9850', name: 'deep low' },
+    { to: 1000, color: '#66bd63', name: 'deep low' },
+    { to: 1005, color: '#a6d96a', name: 'low' },
+    { to: 1010, color: '#d9ef8b', name: 'low' },
+    { to: 1015, color: '#fee08b', name: 'normal' },
+    { to: 1020, color: '#fdae61', name: 'normal' },
+    { to: 1025, color: '#f46d43', name: 'high' },
+    { to: 1030, color: '#d73027', name: 'high' },
+    { to: Infinity, color: '#a50026', name: 'very high' },
+  ];
+  const presBand = v => PRES_BANDS.find(b => v < b.to);
+  const pres = get('slpres_point')?.map(v => v / 100);
+  if (pres) {
+    const lo = Math.floor(Math.min(...pres) - 3), hi = Math.ceil(Math.max(...pres) + 3);
+    const PRH = PANEL_H;
+    // Ticks: band boundaries inside the range, plus the range ends (labels dropped when <10 px apart).
+    const vals = [lo, ...PRES_BANDS.map(b => b.to).filter(v => v > lo && v < hi), hi];
+    let prevPx = -Infinity;
+    const ticks = vals.map(v => {
+      const px = (v - lo) / (hi - lo) * PRH, show = px - prevPx >= 10;
+      if (show) prevPx = px;
+      return { v, label: show ? `${v}` : '', grid: true };
+    });
+    ticks[0].label = `${lo} hPa`;
+    const { y, top, bottom } = panel('pressure', 'Pressure (sea level)', PRH, lo, hi, '', ticks);
+    const cx = i => x(i) + BW / 2;
+    const line = pres.map((v, i) => `${i ? 'L' : 'M'}${cx(i)},${y(v)}`).join('');
+    const clipId = 'pres-clip';
+    el('path', { d: `${line}L${cx(n - 1)},${bottom}L${cx(0)},${bottom}Z` },
+       el('clipPath', { id: clipId }, el('defs', {}, svg)));
+    const g = el('g', { 'clip-path': `url(#${clipId})` }, svg);
+    // Vertical stripes: each hour's column (centred on its point) in that hour's band colour.
+    pres.forEach((v, i) => {
+      el('rect', { x: x(i), width: BW + 0.5, y: top, height: bottom - top, fill: presBand(v).color }, g);
+    });
+    el('path', { d: line, fill: 'none', stroke: 'var(--fg)', 'stroke-width': 1.5, 'stroke-linejoin': 'round' }, svg);
+  }
+
+  // Day separators with day names at the top and bottom (hours are under each panel).
+  // Dividers and night shading cover only each panel's plot area, so titles and hour rows
+  // between the panels stay clean.
+  const axisY = y0 - GAP + 14;
+  daySplits.forEach(i => {
+    // Two-tone dashes (background + gray) so the divider shows on both day and night shading.
+    if (i > 0) for (const q of panels) {
+      el('line', { x1: x(i), x2: x(i), y1: q.top, y2: q.bottom, class: 'grid-base', 'stroke-width': 1.5 }, svg);
+      el('line', { x1: x(i), x2: x(i), y1: q.top, y2: q.bottom, class: 'grid', 'stroke-width': 1.5 }, svg);
+    }
+    for (const ty of [12, axisY + 16])
+      el('text', { x: x(i) + 4, y: ty, class: 'title' }, svg, fmtDay.format(times[i]));
+  });
+
+  // Night shading from computed sunset → sunrise.
+  const tStart = (t0 - dt / 2) * 1000, tEnd = (t0 + (n - 0.5) * dt) * 1000;
+  const nights = nightIntervals(tStart, tEnd, LAT, LON);
+  for (const [a, b] of nights) for (const q of panels)
+    el('rect', { x: xt(a), width: xt(b) - xt(a), y: q.top, height: q.bottom - q.top, fill: 'var(--night)' }, nightG);
+
+  const H = axisY + 24;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+
+  // Current time: thin yellow-black dashed line inside each panel's plot area; moved every
+  // minute, hidden when "now" is outside the forecast.
+  const nowG = el('g', { 'pointer-events': 'none' }, svg);
+  const nowLines = panels.flatMap(q => [
+    el('line', { y1: q.top, y2: q.bottom, stroke: '#facc15', 'stroke-width': 1 }, nowG),
+    el('line', { y1: q.top, y2: q.bottom, stroke: '#111111', 'stroke-width': 1, 'stroke-dasharray': '4 4' }, nowG),
+  ]);
+  const placeNow = () => {
+    const ms = Date.now(), inside = ms >= tStart && ms <= tEnd;
+    nowG.setAttribute('visibility', inside ? 'visible' : 'hidden');
+    for (const l of nowLines) { l.setAttribute('x1', xt(ms)); l.setAttribute('x2', xt(ms)); }
+  };
+  placeNow();
+  clearInterval(window._nowTimer);
+  window._nowTimer = setInterval(placeNow, 60e3);
+
+  // Hover tooltip: crosshair on the hovered hour + every value for that hour.
+  const cross = el('line', { y1: 0, y2: axisY + 4, stroke: 'var(--fg)', 'stroke-opacity': 0.35,
+                             'pointer-events': 'none', visibility: 'hidden' }, svg);
+  const f = (v, d = 1) => (v == null || Number.isNaN(v) ? '–' : v.toFixed(d));
+  const compass = deg => ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW']
+                         [Math.round(((deg % 360) + 360) % 360 / 22.5) % 16];
+  const sw = (color, dash) =>
+    `<svg width="16" height="8"><line x1="0" x2="16" y1="4" y2="4" stroke="${color}" stroke-width="2"` +
+    (dash ? ` stroke-dasharray="4 3"` : '') + `/></svg>`;
+  const cloudSw = color =>
+    `<svg width="16" height="8"><line x1="1" x2="15" y1="4" y2="4" stroke="var(--cl-edge)" stroke-width="4"/>` +
+    `<line x1="1" x2="15" y1="4" y2="4" stroke="${color}" stroke-width="2"/></svg>`;
+  // Tooltip shows only the values plotted in the hovered panel.
+  function tipHtml(i, key) {
+    const ms = times[i].getTime();
+    const night = nights.find(([a, b]) => ms >= a && ms < b);
+    const rows = [];
+    const row = (sym, label, val) => rows.push(`<tr><td>${sym}</td><td>${label}</td><td>${val}</td></tr>`);
+    const range = (a, b) => (a && b ? ` <span class="r">(${f(a[i])} … ${f(b[i])})</span>` : '');
+    const air = series.find(s => s.key === 'airtmp'), chill = series.find(s => s.key === 'wchill');
+    if (key === 'temp') {
+      if (air)   row(sw('var(--air)'), 'Air', `${f(air.v[i])} °C${range(air.mn, air.mx)}`);
+      if (chill) row(sw('var(--chill)'), 'Wind chill', `${f(chill.v[i])} °C${range(chill.mn, chill.mx)}`);
+      if (dew)   row(sw('var(--dew)', true), 'Dew point', `${f(dew[i])} °C`);
+    } else if (key === 'precip') {
+      row('', 'Precipitation', `${f(p[i], 2)} mm`);
+      if (pmx) row('', 'Max in area', `${f(pmx[i], 2)} mm <span class="r">(${pcpLevel(pmx[i])})</span>`);
+      if (pp) row('', 'Chance', `${Math.round(pp[i])}%`);
+      if (pt) row('', 'Type', pcpType(i).name);
+      if (pt?.[i] === 2 && p[i] > 0 && snowLevel(i))
+        row('', 'Intensity', `${snowLevel(i)} snow <span class="r">(visibility ${f(vis[i] / 1000, 1)} km)</span>`);
+      else row('', 'Intensity', pcpLevel(p[i]));
+      const sc = stormClass(i);
+      if (sc) row(`<svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="${sc.color}" stroke="#565656"/></svg>`,
+                  'Storm', sc.name + (sc.detail ? ` <span class="r">(${sc.detail})</span>` : ''));
+    } else if (key === 'wind') {
+      // Bft: force + name, with m/s for reference; m/s / kt: value + name.
+      const fmtW = ms => {
+        const b = beaufort(ms);
+        return wu === 'Bft'
+          ? `${b.force} Bft <span class="r">(${b.name}, ${f(ms)} m/s)</span>`
+          : `${f(ms * wk)} ${wu} <span class="r">(${b.name})</span>`;
+      };
+      row('', 'Wind', fmtW(wsMs[i]));
+      if (wgMs) row('', 'Gusts', fmtW(wgMs[i]));
+      if (wd) row('', 'Direction', `from ${compass(wd[i])} (${Math.round(wd[i])}°)`);
+    } else if (key === 'pressure') {
+      const b = presBand(pres[i]);
+      row(`<svg width="12" height="10"><rect width="12" height="10" fill="${b.color}" stroke="#565656"/></svg>`,
+          'Sea level', `${f(pres[i])} hPa <span class="r">(${b.name})</span>`);
+      const tp = get('trpres_point');
+      if (tp) row('', 'Local', `${f(tp[i] / 100)} hPa`);
+    } else if (key === 'cloud') {
+      for (const s of cloudLayers) row(cloudSw(s.color), s.name, `${Math.round(s.v[i])}%`);
+      if (c) row('', 'Total', `${Math.round(c[i])}%`);
+      if (hasFog && fog[i] > 0) row(`<svg width="16" height="10"><rect x="5" y="0" width="6" height="10" fill="var(--fog)" stroke="var(--cl-edge)"/></svg>`, 'Fog', `${Math.round(fog[i])}%`);
+      if (hasFog && vis) row('', 'Visibility', vis[i] >= 1000 ? `${f(vis[i] / 1000, 1)} km` : `${Math.round(vis[i])} m`);
+    }
+    return `<div class="h">${fmtFull.format(times[i])} <span class="r">${night ? '☾ night' : 'day'}</span></div>` +
+           `<table>${rows.join('')}</table>`;
+  }
+
+  const tip = $('tip');
+  let lastI = -1, lastKey = null;
+  // Mouse: tooltip follows the pointer. Touch/pen: a tap shows it (kept open, placed above
+  // the finger); tapping outside the chart or scrolling closes it.
+  const showAt = ev => {
+    const pt = new DOMPoint(ev.clientX, ev.clientY).matrixTransform(svg.getScreenCTM().inverse());
+    const i = Math.floor((pt.x - L) / BW);
+    const pnl = panels.find(q => pt.y >= q.from && pt.y < q.to);
+    if (i < 0 || i >= n || !pnl) return hideTip();
+    if (i !== lastI || pnl.key !== lastKey) {
+      lastI = i;
+      lastKey = pnl.key;
+      tip.innerHTML = tipHtml(i, pnl.key);
+      cross.setAttribute('x1', x(i) + BW / 2);
+      cross.setAttribute('x2', x(i) + BW / 2);
+    }
+    cross.setAttribute('visibility', 'visible');
+    tip.hidden = false;
+    const pad = 14, w = tip.offsetWidth, h = tip.offsetHeight, touch = ev.pointerType !== 'mouse';
+    let left = ev.clientX + pad, top = touch ? ev.clientY - h - 24 : ev.clientY + pad;
+    if (left + w > innerWidth - 8) left = ev.clientX - pad - w;
+    if (top < 8) top = touch ? ev.clientY + 28 : 8;
+    if (top + h > innerHeight - 8) top = Math.max(8, innerHeight - 8 - h);
+    tip.style.left = `${Math.max(8, Math.min(left, innerWidth - 8 - w))}px`;
+    tip.style.top = `${top}px`;
+  };
+  const hideTip = () => {
+    lastI = -1;
+    lastKey = null;
+    tip.hidden = true;
+    cross.setAttribute('visibility', 'hidden');
+  };
+  svg._hideTip = hideTip;
+  svg.onpointermove = ev => { if (ev.pointerType === 'mouse') showAt(ev); };
+  svg.onpointerdown = ev => { if (ev.pointerType !== 'mouse') showAt(ev); };
+  svg.onpointerleave = ev => { if (ev.pointerType === 'mouse') hideTip(); };
+
+}
+
+let lastData = null; // kept so display-only settings can re-render without refetching
+async function load() {
+  $('err').textContent = '';
+  try {
+    const json = await fetchForecast($('model').value);
+    lastData = json.data;
+    render(lastData);
+  } catch (e) {
+    $('err').textContent = `Failed to load forecast: ${e.message}`;
+  }
+}
+
+// Settings persistence: every <select>/<input> with an id in the header is saved in a cookie
+// (1 year). Browsers don't keep cookies for pages opened from file://, so fall back to
+// localStorage there.
+const SETTINGS_COOKIE = 'suckless_meteo_settings';
+const settingsControls = [...document.querySelectorAll('header select[id]:not([data-nosave]), header input[id]:not([data-nosave])')];
+
+function readSettings() {
+  const m = document.cookie.match(new RegExp(`(?:^|; )${SETTINGS_COOKIE}=([^;]*)`));
+  try {
+    if (m) return JSON.parse(decodeURIComponent(m[1]));
+    return JSON.parse(localStorage.getItem(SETTINGS_COOKIE) || '{}');
+  } catch { return {}; }
+}
+
+function saveSettings() {
+  const s = {};
+  for (const c of settingsControls) s[c.id] = c.type === 'checkbox' || c.type === 'radio' ? c.checked : c.value;
+  const v = encodeURIComponent(JSON.stringify(s));
+  document.cookie = `${SETTINGS_COOKIE}=${v}; max-age=${365 * 864e2}; path=/; SameSite=Lax`;
+  if (!document.cookie.includes(`${SETTINGS_COOKIE}=`))
+    try { localStorage.setItem(SETTINGS_COOKIE, JSON.stringify(s)); } catch {}
+}
+
+const saved = readSettings();
+for (const c of settingsControls) {
+  if (!(c.id in saved)) continue;
+  if (c.type === 'checkbox' || c.type === 'radio') c.checked = !!saved[c.id];
+  else if (c.tagName !== 'SELECT' || [...c.options].some(o => o.value === saved[c.id])) c.value = saved[c.id];
+}
+for (const c of settingsControls) c.addEventListener('change', saveSettings);
+
+$('model').addEventListener('change', load);
+for (const r of document.querySelectorAll('input[name=wind-unit]'))
+  r.addEventListener('change', () => lastData && render(lastData));
+applyLocation();
+window.addEventListener('hashchange', () => { applyLocation(); load(); });
+// Close a tapped tooltip when tapping outside the chart or scrolling.
+const hideChartTip = () => $('chart')._hideTip?.();
+document.addEventListener('pointerdown', e => { if (!$('chart').contains(e.target)) hideChartTip(); });
+window.addEventListener('scroll', hideChartTip, { passive: true });
+document.querySelector('.wrap').addEventListener('scroll', hideChartTip, { passive: true });
+document.getElementById('place-select').addEventListener('change', e => {
+  const q = PLACES[e.target.value];
+  if (q) location.hash = `${q.lat.toFixed(4)},${q.lon.toFixed(4)}`; // triggers hashchange → reload
+});
+load();
+</script>
+</body>
+</html>
